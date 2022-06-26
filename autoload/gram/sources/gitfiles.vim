@@ -14,6 +14,7 @@ if !exists('s:did_init')
 
 
   let s:gitfiles = {'_job_id': 0}
+  const s:upper_dir = '..' .. fnamemodify(getcwd(), ':p')[-1 :]
 
   function! s:gitfiles.init() abort
     let self.parent_dir = expand('%:h')
@@ -34,18 +35,18 @@ if !exists('s:did_init')
   function! s:gitfiles.list() abort
     call self.kill()
     let self._job_id = job_start('git ls-files', {
-          \ 'callback': self.job_callback,
+          \ 'out_cb': self.job_callback,
           \ 'cwd': self.git_root,
           \ })
   endfunction
 
   function! s:gitfiles.job_callback(ch, file) abort
     let upper_depth = 0
-    let base = self.parent_dir
+    let base = fnamemodify(self.parent_dir, ':p')
     let file_fullpath = self.git_root .. a:file
     while stridx(file_fullpath, base) == -1
       let upper_depth += 1
-      let base = simplify(base .. '../')
+      let base = simplify(base .. s:upper_dir)
     endwhile
     let file_displaypath =
           \ repeat('../', upper_depth) .. file_fullpath[strlen(base) :]
@@ -54,13 +55,14 @@ if !exists('s:did_init')
 
   function! s:gitfiles.kill() abort
     try
-      call job_stop(self._job_id)
+      " FIXME: Why 'Key not present in Dictionary "_job_id"' error is raised?
+      if get(self, '_job_id', 0) != 0
+        call job_stop(self._job_id)
+        let self._job_id = 0
+      endif
     catch
       echomsg v:exception
     endtry
-    " if self._job_id != 0 && job_status(self._job_id) ==# 'run'
-    "   call job_stop(self._job_id)
-    " endif
   endfunction
 
 
