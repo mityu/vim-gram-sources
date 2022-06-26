@@ -14,7 +14,7 @@ const s:cmd = [
 let s:job_id = v:null
 let s:session_id = 0
 let s:search_directory = ''
-let s:source = {}
+let s:source = {'name': 'file_rec'}
 
 function! s:source.callback(item) abort
   edit `=a:item.user_data`
